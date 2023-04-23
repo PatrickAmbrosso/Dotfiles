@@ -1,0 +1,133 @@
+# ~/.config/starship.toml
+
+# Inserts a blank line between shell prompts
+add_newline = true
+
+# Palette
+# C9A7EB
+# 8D72E1
+# FFD372 - Yellow
+# 80489C - Purple
+
+# Change the default prompt format
+format = """\
+[╭─](238)\
+[](#80489C)\
+${env_var.STARSHIP_DISTRO}\
+$shell\
+[](fg:#80489C bg:#FFD372)\
+$username\
+[](fg:#FFD372 bg:#23967F)\
+$directory\
+[](fg:#23967F bg:#004346)\
+$git_branch$git_status\
+[](fg:#004346 bg:#8267BE)\
+$golang\
+$python\
+$docker_context\
+[](fg:#8267BE)\
+$line_break\
+[│](238)\
+$line_break\
+[╰──](238)$character\
+"""
+
+# Change the default prompt characters
+[character]
+success_symbol = "[](238)"
+error_symbol = "[](238)"
+
+# Shows an icon that should be included by zshrc script based on the distribution or os
+[env_var.STARSHIP_DISTRO]
+format = '[$env_value]($style)'
+style = "bg:#80489C"  # removed space between distro and rest for pwsh
+variable = "STARSHIP_DISTRO"
+disabled = false
+
+# Shows the username
+[username]
+style_user = "fg:#3D3C42 bg:#FFD372"
+style_root = "fg:#3D3C42 bg:#FFD372"
+format = "[  $user ]($style)"
+disabled = false  # disable in powershell
+show_always = true
+
+[shell]
+format = '[$indicator]($style)'
+fish_indicator = 'FISH '
+bash_indicator = 'BASH '
+powershell_indicator = 'PWSH '
+unknown_indicator = 'SH?? '
+style = 'bg:#80489C'
+disabled = false
+
+[directory]
+truncation_length = 1
+truncation_symbol = "…/"
+style = "bg:#23967F"
+home_symbol = "~"
+# read_only_style = "197"
+# read_only = "  "
+format = "[  $path ]($style)"
+
+[git_branch]
+symbol = ""
+format = "[ $symbol $branch ]($style)"
+truncation_length = 4
+truncation_symbol = "…/"
+style = "bg:#004346"
+
+[git_status]
+format = '[$all_status$ahead_behind ]($style)'
+style = "bg:#004346"
+untracked = "U"
+ahead = "↑"
+behind = "↓"
+diverged = "⚡"
+renamed = "➜"
+deleted = "✖"
+staged = "+"
+conflicted = "!"
+
+# conflicted = "🏳"
+# up_to_date = " "
+# untracked = " "
+# ahead = "⇡${count}"
+# diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+# behind = "⇣${count}"
+# stashed = " "
+# modified = " "
+# staged = '[++\($count\)](green)'
+# renamed = "襁 "
+# deleted = " "
+
+# Configure Programming Languages and Environments
+[aws]
+format = '[$symbol$region]($style) '
+style = 'bold blue'
+symbol = ''
+
+[aws.region_aliases]
+ap-southeast-2 = 'au'
+ap-south-1 = 'in-mumbai'
+us-east-1 = 'va'
+
+[golang]
+symbol = " "
+style = "bg:#8267BE"
+format = '[ $symbol($version) ]($style)'
+
+[terraform]
+format = "via [ terraform $version]($style) 壟 [$workspace]($style) "
+
+[docker_context]
+format = "[ $context ]($style)"
+style = "bg:#8267BE"
+only_with_files	= true
+detect_extensions = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
+
+[python]
+symbol = " "
+style = "bg:#8267BE"
+format = '[ $symbol($version) ]($style)'
+python_binary = "python3"
