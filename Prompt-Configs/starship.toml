@@ -3,29 +3,37 @@
 # Inserts a blank line between shell prompts
 add_newline = true
 
-# Palette
-# C9A7EB
-# 8D72E1
-# FFD372 - Yellow
-# 80489C - Purple
+# Configure Continuation Prompt
+continuation_prompt = '[─── ](238)'
+
+# Colour Palette for Purplish-Palace
+# Purple 1 - #3a215e
+# Purple 2 - #552d89
+# Purple 3 - #6340bc
+# Purple 4 - #80489C
+# Purple 5 - #966ccc
+# Purple 6 - #bf7ecb
 
 # Change the default prompt format
 format = """\
 [╭─](238)\
-[](#80489C)\
+[](#3a215e)\
 ${env_var.STARSHIP_DISTRO}\
 $shell\
-[](fg:#80489C bg:#FFD372)\
+[](fg:#3a215e bg:#552d89)\
 $username\
-[](fg:#FFD372 bg:#23967F)\
+[](fg:#552d89 bg:#6340bc)\
 $directory\
-[](fg:#23967F bg:#004346)\
+[](fg:#6340bc bg:#80489C)\
 $git_branch$git_status\
-[](fg:#004346 bg:#8267BE)\
+[](fg:#80489C bg:#966ccc)\
 $golang\
 $python\
 $docker_context\
-[](fg:#8267BE)\
+[](fg:#966ccc bg:#bf7ecb)\
+$time$cmd_duration\
+[](fg:#bf7ecb bg:#552d89)\
+[](fg:#552d89)\
 $line_break\
 [│](238)\
 $line_break\
@@ -40,14 +48,14 @@ error_symbol = "[](238)"
 # Shows an icon that should be included by zshrc script based on the distribution or os
 [env_var.STARSHIP_DISTRO]
 format = '[$env_value]($style)'
-style = "bg:#80489C"  # removed space between distro and rest for pwsh
+style = "bg:#3a215e"  # removed space between distro and rest for pwsh
 variable = "STARSHIP_DISTRO"
 disabled = false
 
 # Shows the username
 [username]
-style_user = "fg:#3D3C42 bg:#FFD372"
-style_root = "fg:#3D3C42 bg:#FFD372"
+style_user = "bg:#552d89"
+style_root = "bg:#552d89"
 format = "[  $user ]($style)"
 disabled = false  # disable in powershell
 show_always = true
@@ -58,28 +66,40 @@ fish_indicator = 'FISH '
 bash_indicator = 'BASH '
 powershell_indicator = 'PWSH '
 unknown_indicator = 'SH?? '
-style = 'bg:#80489C'
+style = 'bg:#3a215e'
 disabled = false
 
 [directory]
 truncation_length = 1
 truncation_symbol = "…/"
-style = "bg:#23967F"
+style = "bg:#6340bc"
 home_symbol = "~"
 # read_only_style = "197"
 # read_only = "  "
 format = "[  $path ]($style)"
+
+[time]
+disabled = false
+format = '[  $time ]($style)'
+style = "bg:#bf7ecb"
+time_format = '%R'
+utc_time_offset = '+5.5'
+
+[fill]
+symbol = '─'
+style = '#EEEEEE'
 
 [git_branch]
 symbol = ""
 format = "[ $symbol $branch ]($style)"
 truncation_length = 4
 truncation_symbol = "…/"
-style = "bg:#004346"
+style = "bg:#80489C"
 
 [git_status]
 format = '[$all_status$ahead_behind ]($style)'
-style = "bg:#004346"
+style = "bg:#80489C"
+up_to_date = "="
 untracked = "U"
 ahead = "↑"
 behind = "↓"
@@ -89,22 +109,15 @@ deleted = "✖"
 staged = "+"
 conflicted = "!"
 
-# conflicted = "🏳"
-# up_to_date = " "
-# untracked = " "
-# ahead = "⇡${count}"
-# diverged = "⇕⇡${ahead_count}⇣${behind_count}"
-# behind = "⇣${count}"
-# stashed = " "
-# modified = " "
-# staged = '[++\($count\)](green)'
-# renamed = "襁 "
-# deleted = " "
+# Command Run time Notification
+[cmd_duration]
+min_time = 5000
+format = '[\(took $duration\) ](bg:#bf7ecb)'
 
 # Configure Programming Languages and Environments
 [aws]
 format = '[$symbol$region]($style) '
-style = 'bold blue'
+style = 'bg:#966ccc'
 symbol = ''
 
 [aws.region_aliases]
@@ -114,7 +127,7 @@ us-east-1 = 'va'
 
 [golang]
 symbol = " "
-style = "bg:#8267BE"
+style = "bg:#966ccc"
 format = '[ $symbol($version) ]($style)'
 
 [terraform]
@@ -122,12 +135,12 @@ format = "via [ terraform $version]($style) 壟 [$workspace]($style) "
 
 [docker_context]
 format = "[ $context ]($style)"
-style = "bg:#8267BE"
+style = "bg:#966ccc"
 only_with_files	= true
 detect_extensions = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
 
 [python]
 symbol = " "
-style = "bg:#8267BE"
+style = "bg:#966ccc"
 format = '[ $symbol($version) ]($style)'
 python_binary = "python3"
