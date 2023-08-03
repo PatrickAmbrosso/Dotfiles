@@ -4,7 +4,7 @@
 add_newline = true
 
 # Configure Continuation Prompt
-continuation_prompt = '[─── ](238)'
+continuation_prompt = '[───❯ ](238)'
 
 # Colour Palette for Purplish-Palace
 # Purple 1 - #3a215e
@@ -21,7 +21,7 @@ format = """\
 ${env_var.STARSHIP_DISTRO}\
 $shell\
 [](fg:#3a215e bg:#552d89)\
-$username\
+$username$hostname\
 [](fg:#552d89 bg:#6340bc)\
 $directory\
 [](fg:#6340bc bg:#80489C)\
@@ -30,10 +30,9 @@ $git_branch$git_status\
 $golang\
 $python\
 $docker_context\
-[](fg:#966ccc bg:#bf7ecb)\
-$time$cmd_duration\
-[](fg:#bf7ecb bg:#552d89)\
+[](fg:#966ccc bg:#552d89)\
 [](fg:#552d89)\
+[$fill](232) \
 $line_break\
 [│](238)\
 $line_break\
@@ -42,8 +41,8 @@ $line_break\
 
 # Change the default prompt characters
 [character]
-success_symbol = "[](238)"
-error_symbol = "[](238)"
+success_symbol = "[❯](238)"
+error_symbol = "[❯](238)"
 
 # Shows an icon that should be included by zshrc script based on the distribution or os
 [env_var.STARSHIP_DISTRO]
@@ -56,9 +55,17 @@ disabled = false
 [username]
 style_user = "bg:#552d89"
 style_root = "bg:#552d89"
-format = "[  $user ]($style)"
+format = "[  $user ]($style)"
 disabled = false  # disable in powershell
 show_always = true
+
+[hostname]
+ssh_only = false
+ssh_symbol = '(SSH)'
+style = "bg:#552d89"
+format = '[ $hostname $ssh_symbol]($style)'
+trim_at = '.home.patrickambrose.com'
+disabled = false
 
 [shell]
 format = '[$indicator]($style)'
@@ -71,23 +78,20 @@ disabled = false
 
 [directory]
 truncation_length = 1
-truncation_symbol = "…/"
+truncation_symbol = " .\\"
 style = "bg:#6340bc"
-home_symbol = "~"
-# read_only_style = "197"
-# read_only = "  "
-format = "[  $path ]($style)"
+home_symbol = ""
+format = "[ $path ]($style)"
 
 [time]
 disabled = false
-format = '[  $time ]($style)'
+format = '[  $time ]($style)'
 style = "bg:#bf7ecb"
 time_format = '%R'
 utc_time_offset = '+5.5'
 
 [fill]
 symbol = '─'
-style = '#EEEEEE'
 
 [git_branch]
 symbol = ""
@@ -111,7 +115,7 @@ conflicted = "!"
 
 # Command Run time Notification
 [cmd_duration]
-min_time = 5000
+min_time = 20000
 format = '[\(took $duration\) ](bg:#bf7ecb)'
 
 # Configure Programming Languages and Environments
@@ -122,13 +126,13 @@ symbol = ''
 
 [aws.region_aliases]
 ap-southeast-2 = 'au'
-ap-south-1 = 'in-mumbai'
+ap-south-1 = 'mu'
 us-east-1 = 'va'
 
 [golang]
 symbol = " "
 style = "bg:#966ccc"
-format = '[ $symbol($version) ]($style)'
+format = '[ $symbol]($style)'
 
 [terraform]
 format = "via [ terraform $version]($style) 壟 [$workspace]($style) "
@@ -140,7 +144,7 @@ only_with_files	= true
 detect_extensions = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
 
 [python]
-symbol = " "
+symbol = ""
 style = "bg:#966ccc"
-format = '[ $symbol($version) ]($style)'
+format = '[ ${symbol} ${pyenv_prefix}(\($virtualenv\) )]($style)'
 python_binary = "python3"

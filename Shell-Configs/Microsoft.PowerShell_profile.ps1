@@ -27,7 +27,13 @@ Set-PSReadLineOption -PredictionSource History
 # Asks Starship to use alternative location for Starship.toml file
 $ProfileLocation = [System.IO.Path]::GetDirectoryName($PROFILE)
 $ENV:STARSHIP_CONFIG = "$ProfileLocation/starship.toml"
-$ENV:STARSHIP_DISTRO = "者"
+$ENV:STARSHIP_DISTRO = " "
 
 # Triggers PowerShell to use Startship Prompt
 Invoke-Expression (&starship init powershell)
+
+# Display WinFetch Output on Screen
+& C:\Users\PatrickAmbrosso\Documents\PowerShell\Scripts\winfetch.ps1
+
+# Commands and Alias Definitions
+Set-Alias -Name "PWSSH" -Value "C:\Users\PatrickAmbrosso\.ssh\pwssh.ps1"
