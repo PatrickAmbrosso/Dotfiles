@@ -33,7 +33,7 @@ $ENV:STARSHIP_DISTRO = " "
 Invoke-Expression (&starship init powershell)
 
 # Display WinFetch Output on Screen
-& C:\Users\PatrickAmbrosso\Documents\PowerShell\Scripts\winfetch.ps1
+& "$($env:USERPROFILE)\Documents\PowerShell\Scripts\winfetch.ps1"
 
 # Commands and Alias Definitions
-Set-Alias -Name "PWSSH" -Value "C:\Users\PatrickAmbrosso\.ssh\pwssh.ps1"
+Set-Alias -Name "PWSSH" -Value "$($env:USERPROFILE)\.ssh\pwssh.ps1"
