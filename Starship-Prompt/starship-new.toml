@@ -1,0 +1,162 @@
+# ~/.config/starship.toml
+
+# Inserts a blank line between shell prompts
+add_newline = true
+
+# Configure Continuation Prompt
+continuation_prompt = '[────❯ ](white)'
+
+# Colour Palette for Purplish-Palace
+# Purple 1 - #3a215e
+# Purple 2 - #552d89
+# Purple 3 - #6340bc
+# Purple 4 - #80489C
+# Purple 5 - #966ccc
+# Purple 6 - #bf7ecb
+
+# Change the default prompt format
+format = """\
+[╭─](white)\
+[](#f38ba8)\
+${env_var.STARSHIP_DISTRO}\
+$shell\
+[](fg:#f38ba8)\
+$username$hostname\
+[](fg:#552d89 bg:#6340bc)\
+$directory\
+[](fg:#6340bc bg:#80489C)\
+$git_branch$git_status\
+[](fg:#80489C bg:#966ccc)\
+$golang\
+$python\
+$docker_context\
+[](fg:#966ccc bg:#552d89)\
+[](fg:#552d89)\
+[$fill](232)\
+[](fg:#552d89)\
+$time\
+[](fg:#b4befe)\
+$line_break\
+[│](white)\
+$line_break\
+[╰─](white)$status$character\
+"""
+
+# Change the default prompt characters
+[character]
+success_symbol = "[❯](white)"
+error_symbol = "[❯](white)"
+
+# Shows an icon that should be included by zshrc script based on the distribution or os
+[env_var.STARSHIP_DISTRO]
+format = '[$env_value]($style)'
+style = "bg:#f38ba8 fg:#1e1e2e"  # removed space between distro and rest for pwsh
+variable = "STARSHIP_DISTRO"
+disabled = false
+
+# Shows the username
+[username]
+style_user = ""
+style_root = ""
+format = "[  $user ]($style)"
+disabled = false  # disable in powershell
+show_always = true
+
+[hostname]
+ssh_only = false
+ssh_symbol = '(SSH)'
+style = ""
+format = '[in  $hostname $ssh_symbol]($style)'
+trim_at = '.home.patrickambrose.com'
+disabled = false
+
+[shell]
+format = '[$indicator]($style)'
+fish_indicator = 'FISH'
+bash_indicator = 'BASH'
+powershell_indicator = 'PWSH'
+unknown_indicator = 'SH??'
+style = 'bg:#f38ba8 fg:#1e1e2e'
+disabled = false
+
+[directory]
+truncation_length = 1
+truncation_symbol = " .\\"
+style = "bg:#6340bc"
+home_symbol = ""
+format = "[ $path ]($style)"
+
+[time]
+disabled = false
+style = "bg:#552d89"
+format = '[  $time ]($style)'
+time_format = '%T'
+utc_time_offset = '+5.5'
+
+[status]
+style = ''
+symbol = '[◉](fg:#fab387)'
+success_symbol = '[◉](fg:#cba6f7)'
+format = '[\($symbol\)]($style)'
+map_symbol = true
+disabled = false
+
+[fill]
+symbol = '─'
+style = 'white'
+
+[git_branch]
+symbol = ""
+format = "[ $symbol $branch ]($style)"
+truncation_length = 4
+truncation_symbol = "…/"
+style = "bg:#80489C"
+
+[git_status]
+format = '[$all_status$ahead_behind ]($style)'
+style = "bg:#80489C"
+up_to_date = "="
+untracked = "U"
+ahead = "↑"
+behind = "↓"
+diverged = "⚡"
+renamed = "➜"
+deleted = "✖"
+staged = "+"
+conflicted = "!"
+
+# Command Run time Notification
+[cmd_duration]
+min_time = 20000
+format = '[\(took $duration\) ](bg:#bf7ecb)'
+
+# Configure Programming Languages and Environments
+[aws]
+format = '[$symbol$region]($style) '
+style = 'bg:#966ccc'
+symbol = ''
+
+[aws.region_aliases]
+ap-southeast-2 = 'au'
+ap-south-1 = 'mu'
+us-east-1 = 'va'
+
+[golang]
+symbol = " "
+style = "bg:#966ccc"
+format = '[ $symbol]($style)'
+
+[terraform]
+format = "via [ terraform $version]($style) 壟 [$workspace]($style) "
+
+[docker_context]
+format = "[ $context ]($style)"
+style = "bg:#966ccc"
+only_with_files	= true
+detect_extensions = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
+
+[python]
+symbol = ""
+style = "bg:#966ccc"
+format = '[ ${symbol} ${pyenv_prefix}(\($virtualenv\) )]($style)'
+python_binary = "python3"
