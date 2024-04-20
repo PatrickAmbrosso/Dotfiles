@@ -4,7 +4,7 @@
 add_newline = true
 
 # Configure Continuation Prompt
-continuation_prompt = '[────❯ ](white)'
+continuation_prompt = '[─────❯ ](fg:#cba6f7)'
 
 # Colour Palette for Purplish-Palace
 # Purple 1 - #3a215e
@@ -14,59 +14,78 @@ continuation_prompt = '[────❯ ](white)'
 # Purple 5 - #966ccc
 # Purple 6 - #bf7ecb
 
+# Color Palette for Catppuccin
+# Rosewater - #f5e0dc
+# Flamingo  - #f2cdcd
+# Pink      - #f5c2e7
+# Mauve     - #cba6f7
+# Red       - #f38ba8
+# Maroon    - #89dceb
+# Peach     - #fab387
+# Yellow    - #f9e2af
+# Green     - #a6e3a1
+# Teal      - #94e2d5
+# Sky       - #89dceb
+# Sapphire  - #74c7ec
+# Blue      - #89b4fa
+# Lavender  - #b4befe
+
 # Change the default prompt format
 format = """\
-[╭─](white)\
-[](#f38ba8)\
+[╭─](#cba6f7)\
+[](#cba6f7)\
 ${env_var.STARSHIP_DISTRO}\
 $shell\
-[](fg:#f38ba8)\
+[](fg:#cba6f7 bg:#b4befe)\
 $username$hostname\
-[](fg:#552d89 bg:#6340bc)\
+[](fg:#b4befe bg:#f5c2e7)\
 $directory\
-[](fg:#6340bc bg:#80489C)\
+[](fg:#f5c2e7 bg:#f9e2af)\
 $git_branch$git_status\
-[](fg:#80489C bg:#966ccc)\
-$golang\
-$python\
-$docker_context\
-[](fg:#966ccc bg:#552d89)\
-[](fg:#552d89)\
-[$fill](232)\
-[](fg:#552d89)\
-$time\
-[](fg:#b4befe)\
+[](fg:#f9e2af)\
+[$fill]()\
 $line_break\
-[│](white)\
+[│](fg:#cba6f7)\
 $line_break\
-[╰─](white)$status$character\
+[╰─](fg:#cba6f7)\
+[\\(](fg:#cba6f7)\
+$status\
+[\\)](fg:#cba6f7)\
+$character\
 """
+
+# [](fg:#fab387 bg:#89dceb)\
+# $python$golang\
+# [](fg:#89dceb)\
+# [](fg:#f2cdcd)\
+# $time\
+# [](fg:#f2cdcd)\
 
 # Change the default prompt characters
 [character]
-success_symbol = "[❯](white)"
-error_symbol = "[❯](white)"
+success_symbol = "[❯](fg:#cba6f7)"
+error_symbol = "[❯](fg:#cba6f7)"
 
 # Shows an icon that should be included by zshrc script based on the distribution or os
 [env_var.STARSHIP_DISTRO]
 format = '[$env_value]($style)'
-style = "bg:#f38ba8 fg:#1e1e2e"  # removed space between distro and rest for pwsh
+style = "bg:#cba6f7 fg:#1e1e2e"  # removed space between distro and rest for pwsh
 variable = "STARSHIP_DISTRO"
 disabled = false
 
 # Shows the username
 [username]
-style_user = ""
-style_root = ""
-format = "[  $user ]($style)"
+style_user = "bg:#b4befe fg:#1e1e2e"
+style_root = "bg:#b4befe fg:#1e1e2e"
+format = "[  $user]($style)" #       
 disabled = false  # disable in powershell
 show_always = true
 
 [hostname]
 ssh_only = false
 ssh_symbol = '(SSH)'
-style = ""
-format = '[in  $hostname $ssh_symbol]($style)'
+style = "bg:#b4befe fg:#1e1e2e"
+format = '[  $hostname $ssh_symbol]($style)' #      
 trim_at = '.home.patrickambrose.com'
 disabled = false
 
@@ -76,75 +95,87 @@ fish_indicator = 'FISH'
 bash_indicator = 'BASH'
 powershell_indicator = 'PWSH'
 unknown_indicator = 'SH??'
-style = 'bg:#f38ba8 fg:#1e1e2e'
+style = 'bg:#cba6f7 fg:#1e1e2e'
 disabled = false
 
 [directory]
 truncation_length = 1
-truncation_symbol = " .\\"
-style = "bg:#6340bc"
-home_symbol = ""
+truncation_symbol = " .\\"
+style = "bg:#f5c2e7 fg:#1e1e2e"
+home_symbol = "" # 
 format = "[ $path ]($style)"
 
 [time]
 disabled = false
-style = "bg:#552d89"
-format = '[  $time ]($style)'
-time_format = '%T'
+style = "bg:#f2cdcd fg:#1e1e2e"
+format = '[  $time]($style)' # 
+time_format = '%R'
 utc_time_offset = '+5.5'
 
 [status]
 style = ''
-symbol = '[◉](fg:#fab387)'
-success_symbol = '[◉](fg:#cba6f7)'
-format = '[\($symbol\)]($style)'
+symbol = '[◉](fg:#f9e2af)'
+success_symbol = '[◉](fg:#a6e3a1)'
+format = '[$symbol]($style)'
 map_symbol = true
 disabled = false
 
 [fill]
 symbol = '─'
-style = 'white'
+style = 'fg:#cba6f7'
 
 [git_branch]
 symbol = ""
-format = "[ $symbol $branch ]($style)"
-truncation_length = 4
+format = "([ $symbol $branch]($style))"
+truncation_length = 10
 truncation_symbol = "…/"
-style = "bg:#80489C"
+style = "bg:#f9e2af fg:#1e1e2e"
 
+#             
 [git_status]
-format = '[$all_status$ahead_behind ]($style)'
-style = "bg:#80489C"
-up_to_date = "="
-untracked = "U"
-ahead = "↑"
-behind = "↓"
-diverged = "⚡"
-renamed = "➜"
-deleted = "✖"
-staged = "+"
-conflicted = "!"
+format = '([ $all_status$ahead_behind]($style))'
+style = "bg:#f9e2af fg:#1e1e2e"
+up_to_date = " "
+untracked = " "
+ahead = " "
+behind = " "
+diverged = " "
+renamed = " "
+deleted = " "
+staged = " "
+conflicted = " "
 
 # Command Run time Notification
 [cmd_duration]
 min_time = 20000
 format = '[\(took $duration\) ](bg:#bf7ecb)'
 
-# Configure Programming Languages and Environments
+# Configurations for Programming Languages
+[python]
+symbol = ""
+style = "bg:#89dceb fg:#1e1e2e"
+format = '[ $symbol $version (\($virtualenv\) )]($style)'
+
+[golang]
+symbol = ""
+style = "bg:#89dceb fg:#1e1e2e"
+format = '[ $symbol $version ]($style)'
+
+# Configurations for Cloud & Cloud Native Tools and Environments
 [aws]
-format = '[$symbol$region]($style) '
-style = 'bg:#966ccc'
+format = '[ $symbol ]($style)'
+style = 'bg:#89dceb fg:#1e1e2e'
 symbol = ''
+disabled = false
+force_display = true
 
 [aws.region_aliases]
 ap-southeast-2 = 'au'
 ap-south-1 = 'mu'
 us-east-1 = 'va'
 
-[golang]
-symbol = " "
-style = "bg:#966ccc"
-format = '[ $symbol]($style)'
+[aws.profile_aliases]
+admin-patrick-ambrose-sandbox = 'PA90X'
 
 [terraform]
 format = "via [ terraform $version]($style) 壟 [$workspace]($style) "
@@ -154,9 +185,3 @@ format = "[ $context ]($style)"
 style = "bg:#966ccc"
 only_with_files	= true
 detect_extensions = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
-
-[python]
-symbol = ""
-style = "bg:#966ccc"
-format = '[ ${symbol} ${pyenv_prefix}(\($virtualenv\) )]($style)'
-python_binary = "python3"
