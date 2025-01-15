@@ -1,0 +1,54 @@
+# theme
+theme = "patppuccin"
+
+[editor]
+line-number = "absolute"
+mouse = true
+popup-border = "none"
+color-modes = true
+true-color = true
+auto-format = true
+
+[editor.inline-diagnostics]
+cursor-line = "hint"
+other-lines = "warning"
+prefix-len = 4
+
+[editor.indent-guides]
+render = true
+character = "▏" # Some characters that work well: "▏", "┆", "┊", "⸽"
+skip-levels = 1
+
+[editor.auto-save]
+focus-lost = true
+after-delay.enable = true
+after-delay.timeout = 5000
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "bar"
+select = "bar"
+
+[editor.file-picker]
+hidden = false
+
+[editor.lsp]
+display-messages = true
+
+
+[editor.statusline]
+left = ["mode", "file-base-name", "file-modification-indicator"]
+center = []
+right = [
+    "diagnostics",
+    "selections",
+    "position",
+    "file-encoding",
+    "file-type",
+    "version-control",
+    "spinner",
+]
+separator = "│"
+mode.normal = "NORMAL"
+mode.insert = "INSERT"
+mode.select = "SELECT"

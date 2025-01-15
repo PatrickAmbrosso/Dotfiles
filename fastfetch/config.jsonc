@@ -1,46 +1,31 @@
-// Load with --load-config examples/2.jsonc
-// Note that you must replace the image path to an existing image to display it.
+// Fastfetch Configuration
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
     "general": {
         "multithreading": true
     },
     "logo": {
-        // "type": "none"
-        "type": "iterm",
-        "width": 28,
-        "preserveAspectRatio": true,
-        "recache": true,
-        "source": "C:\\Users\\PA90X\\.config\\fastfetch\\logo15.png"
-        // Image Source: https://uk.pinterest.com/pin/395472411048365564/
+        "type": "none"
     },
     "display": {
-        "separator": " "
+        "separator": ""
     },
     "modules": [
         {
             "type": "custom",
-            "format": ""
+            "format": "\u001b[38;2;203;166;247m┏┳┓┓┏┏┓  ┏┓┳┳┓┳┓┳┓┏┓┏┓┳┳┳┏┓  ┏┓┳┓┓┏┏┓┏┓┏┓┏┓"
         },
         {
             "type": "custom",
-            "format": "\u001b[38;2;250;179;135m     /|"
+            "format": "\u001b[38;2;203;166;247m ┃ ┣┫┣   ┣┫┃┃┃┣┫┣┫┃┃┗┓┃┃┃┗┓  ┃┃┃┃┗┫┗┓┗┓┣ ┣┫"
         },
         {
             "type": "custom",
-            "format": "\u001b[38;2;250;179;135m    / |       \u001b[38;2;203;166;247m┏┳┓┓┏┏┓ ┏┓┳┓┓┏┏┓┏┓┏┓┳┳┏┓ ┏┓┳┳┓┳┓┳┓┏┓┏┓┳┏┓\u001b[38;2;249;226;175m─╮"
+            "format": "\u001b[38;2;203;166;247m ┻ ┛┗┗┛  ┛┗┛ ┗┻┛┛┗┗┛┗┛┻┗┛┗┛  ┗┛┻┛┗┛┗┛┗┛┗┛┛┗"
         },
         {
             "type": "custom",
-            "format": "\u001b[38;2;250;179;135m   /__|___    \u001b[38;2;203;166;247m ┃ ┣┫┣  ┃┃┃┃┗┫┗┓┗┓┣ ┃┃┗┓ ┣┫┃┃┃┣┫┣┫┃┃┗┓┃┣┫ \u001b[38;2;249;226;175m│"
-        },
-        {
-            "type": "custom",
-            "format": "\u001b[38;2;250;179;135m  \\=======/   \u001b[38;2;203;166;247m ┻ ┛┗┗┛ ┗┛┻┛┗┛┗┛┗┛┗┛┗┛┗┛ ┛┗┛ ┗┻┛┛┗┗┛┗┛┻┛┗ \u001b[38;2;249;226;175m│"
-        },
-        {
-            "type": "custom",
-            "format": "\u001b[38;2;116;199;236m~~~`~~~~~'~~ \u001b[38;2;249;226;175m──── A U D I O  ◈  V I D E O  ◈  D I S C O \u001b[38;2;249;226;175m╯"
+            "format": "\u001b[38;2;166;227;161m── ETERNITY & FURTHER ──────────────────── ▪" //○●◉
         },
         {
             "type": "custom",
@@ -48,95 +33,72 @@
         },
         {
             "type": "os",
-            // "key": "\u001b[38;2;166;227;161m │  ", // Options for Mac () and Linux ()
             "key": "\u001b[38;2;245;194;231m  OS",
-            "keyWidth": 16,
+            "keyWidth": 14,
             "keyColor": "magenta",
             "format": "{4}"
         },
         {
             "type": "shell",
-            // "key": "\u001b[38;2;166;227;161m │  ",
             "key": "\u001b[38;2;245;194;231m  SHELL",
-            "keyWidth": 16,
+            "keyWidth": 14,
             "keyColor": "magenta",
             "format": "{6} {4}"
         },
         {
-            "type": "uptime",
-            "key": "\u001b[38;2;245;194;231m󰔚  UPTIME",
-            "keyWidth": 16,
-            "keyColor": "magenta",
-            "format": "{1} days {2} hours {3} mins"
-        },
-        {
-            "type": "battery",
-            // "key": "\u001b[38;2;166;227;161m │ 󰄌 ",
-            "key": "\u001b[38;2;245;194;231m󰄌  POWER",
-            "keyWidth": 16,
-            "keyColor": "magenta",
-            "format": "{5} ({4})"
-        },
-        // {
-        //     "type": "publicip",
-        //     "timeout": 1000
-        // },
-        {
-            "type": "localip",
-            "key": "\u001b[38;2;245;194;231m󰀂  IP ADDR",
-            "keyWidth": 16,
-            "keyColor": "magenta",
-            "compact": false,
-            "format": "{1} via {4}",
-            "showIpv6": false,
-            "showMac": false,
-            "showSpeed": false,
-            "showMtu": false,
-            "showLoop": false,
-            "showFlags": false,
-            "showAllIps": false
-        },
-        {
-            "type": "dns",
-            "showType": "ipv4",
-            "key": "\u001b[38;2;245;194;231m󰇖  DNS",
-            "keyWidth": 16,
-            "keyColor": "blue",
-            "format": "{1}"
-
-
-        },
-        {
             "type": "cpu",
-            // "key": "\u001b[38;2;166;227;161m │  ",
             "key": "\u001b[38;2;245;194;231m  CPU",
-            "keyWidth": 16,
+            "keyWidth": 14,
             "keyColor": "red",
             "format": "{1}"
         },
         {
             "type": "gpu",
-            // "key": "\u001b[38;2;166;227;161m │ 󰨇 ",
             "key": "\u001b[38;2;245;194;231m󰨇  GPU",
-            "keyWidth": 16,
-            // "keyColor": "default",
+            "keyWidth": 14,
             "format": "{2}"
         },
         {
             "type": "memory",
-            // "key": "\u001b[38;2;166;227;161m │  ",
             "key": "\u001b[38;2;245;194;231m  RAM",
-            "keyWidth": 16,
+            "keyWidth": 14,
             "keyColor": "magenta",
             "format": "{1} / {2} ({3})"
         },
         {
             "type": "disk",
-            // "key": "\u001b[38;2;166;227;161m │  ",
-            "key": "\u001b[38;2;245;194;231m  STORGE",
-            "keyWidth": 16,
+            "key": "\u001b[38;2;245;194;231m  STORAGE",
+            "keyWidth": 14,
             "keyColor": "magenta",
             "format": "{1} of {2} ({3}) {9}"
         }
     ]
 }
+
+// ASCII Color Codes for Catppuccin Mocha Colors
+// \u001b[38;2;245;224;220m  # rosewater
+// \u001b[38;2;242;205;205m  # flamingo
+// \u001b[38;2;245;194;231m  # pink
+// \u001b[38;2;203;166;247m  # mauve
+// \u001b[38;2;243;139;168m  # red
+// \u001b[38;2;235;160;172m  # maroon
+// \u001b[38;2;250;179;135m  # peach
+// \u001b[38;2;249;226;175m  # yellow
+// \u001b[38;2;166;227;161m  # green
+// \u001b[38;2;148;226;213m  # teal
+// \u001b[38;2;137;220;235m  # sky
+// \u001b[38;2;116;199;236m  # sapphire
+// \u001b[38;2;137;180;250m  # blue
+// \u001b[38;2;180;190;254m  # lavender
+// \u001b[38;2;205;214;244m  # text
+// \u001b[38;2;186;194;222m  # subtext1
+// \u001b[38;2;166;173;200m  # subtext0
+// \u001b[38;2;147;153;178m  # overlay2
+// \u001b[38;2;127;132;156m  # overlay1
+// \u001b[38;2;108;112;134m  # overlay0
+// \u001b[38;2;88;91;112m    # surface2
+// \u001b[38;2;69;71;90m     # surface1
+// \u001b[38;2;49;50;68m     # surface0
+// \u001b[38;2;30;30;46m     # base
+// \u001b[38;2;24;24;37m     # mantle
+// \u001b[38;2;17;17;27m     # crust

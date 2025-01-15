@@ -17,13 +17,13 @@ continuation_prompt = '[… ](bold mauve)'
 # Left Prompt
 format = """\
 $username \
-[on](overlay2) ${env_var.STARSHIP_DISTRO}$hostname \
-[at](overlay2) $directory \
-([with](overlay2) $git_branch$git_status)\
+[with](overlay2) $os$hostname \
+[at](overlay2) $directory\
+( [on](overlay2) $git_branch)\
 [$fill]() \
 $cmd_duration\
 ([using](overlay2) $nodejs$bun$python${custom.py_env}$golang$elixir$rust)\
-[in](overlay2) $shell \
+[in](overlay2) $shell\
 $line_break\
 $character\
 """
@@ -39,6 +39,21 @@ style_root = "bold mauve"
 format = "[ $user]($style)"
 disabled = false
 show_always = true
+
+[os]
+format = "[$symbol]($style)"
+style = "bold pink"
+disabled = false
+
+[os.symbols]
+Windows = " "
+Macos = " "
+Linux = " "
+Ubuntu = " "
+Debian = " "
+Raspbian = " "
+Arch = " "
+Unknown = " "
 
 [hostname]
 ssh_only = false
@@ -62,7 +77,7 @@ zsh_indicator = 'zsh'
 powershell_indicator = 'pwsh'
 nu_indicator = 'nush'
 unknown_indicator = 'sh..'
-style = 'bold blue'
+style = 'bold yellow'
 disabled = false
 
 [directory]
@@ -78,12 +93,12 @@ error_symbol = "[❯](red)"
 
 [status]
 style = ''
-symbol = '[⦿](fg:#f9e2af)'
-success_symbol = '[⦿](fg:#a6e3a1)'
-not_executable_symbol = '[⦿](fg:#f9e2af)'
-not_found_symbol = '[⦿](fg:#f9e2af)'
-sigint_symbol = '[⦿](fg:#89dceb)'
-signal_symbol = '[⦿](fg:#89b4fa)'
+symbol = '[󰅙 ](fg:#f9e2af)'
+success_symbol = '[ ](fg:#a6e3a1)'
+not_executable_symbol = '[ ](fg:#f9e2af)'
+not_found_symbol = '[ ](fg:#f9e2af)'
+sigint_symbol = '[󰅙 ](fg:#89dceb)'
+signal_symbol = '[ ](fg:#89b4fa)'
 format = '[$symbol]($style)'
 map_symbol = true
 disabled = false
@@ -113,7 +128,7 @@ truncation_symbol = "…/"
 style = "bold peach"
 
 [git_status]
-format = '( [\[$all_status\] ]($style))'
+format = '( [\[$all_status\]]($style))'
 style = "bold peach"
 conflicted = "="
 ahead = "⇡"
@@ -133,8 +148,7 @@ deleted = "✘"
 [python]
 symbol = " "
 style = "bold blue"
-version_format = "v${major}.${minor}"
-format = '[$symbol$version ]($style)'
+format = '[$symbol]($style)'
 
 [custom.py_env]
 detect_files = [ 'pyproject.toml' , 'poetry.lock' ]
@@ -146,73 +160,22 @@ symbol = "󱐋"
 [golang]
 symbol = " "
 style = "bold sapphire"
-version_format = "v${major}.${minor}"
 format = '[$symbol]($style)'
 
 [nodejs]
 symbol = "󰎙 "
 style = "bold green"
 format = '[$symbol]($style)'
-version_format = "v${major}.${minor}"
 
 [bun]
 symbol = "󰳯 "
 style = "bold rosewater"
-format = '[$symbol$version ]($style)'
-version_format = "v${major}.${minor}"
-
-[elixir]
-symbol = " "
-style = "bold mauve"
-format = '[$symbol$version ]($style)'
-version_format = "v${major}.${minor}"
+format = '[$symbol]($style)'
 
 [rust]
 symbol = " "
 style = "bold peach"
-format = '[$symbol$version ]($style)'
-version_format = "v${major}.${minor}"
-
-# Prompt configurations for cloud providers
-
-[aws]
-symbol = " "
-style = "bold peach"
-disabled = false
-force_display = true
-format = '[via ](overlay2)[$symbol $profile ]($style)[at ](overlay2)[$region]($style)'
-
-[aws.profile_aliases]
-PA90X = 'PA90X'
-
-[aws.region_aliases]
-us-east-1      = 'N. Virginia'         # 'us-east-1' 'USE01'      # US East (N. Virginia)
-us-east-2      = 'Ohio'                # 'us-east-2' 'USE02'      # US East (Ohio)
-us-west-1      = 'N. California'       # 'us-west-1' 'USW01'      # US West (N. California)
-us-west-2      = 'Oregon'              # 'us-west-2' 'USW02'      # US West (Oregon)
-af-south-1     = 'Cape Town'           # 'af-south-1' 'AFS01'     # Africa (Cape Town)
-ap-east-1      = 'Hong Kong'           # 'ap-east-1' 'APE01'      # Asia Pacific (Hong Kong)
-ap-south-1     = 'Mumbai'              # 'ap-south-1' 'APS01'     # Asia Pacific (Mumbai)
-ap-south-2     = 'Hyderabad'           # 'ap-south-2' 'APS02'     # Asia Pacific (Hyderabad)
-ap-northeast-3 = 'Osaka'               # 'ap-northeast-3' 'APNE3' # Asia Pacific (Osaka)
-ap-northeast-2 = 'Seoul'               # 'ap-northeast-2' 'APNE2' # Asia Pacific (Seoul)
-ap-southeast-1 = 'Singapore'           # 'ap-southeast-1' 'APSE1' # Asia Pacific (Singapore)
-ap-southeast-2 = 'Sydney'              # 'ap-southeast-2' 'APSE2' # Asia Pacific (Sydney)
-ap-northeast-1 = 'Tokyo'               # 'ap-northeast-1' 'APNE1' # Asia Pacific (Tokyo)
-ca-central-1   = 'Central Canada'      # 'ca-central-1' 'CAC01'   # Canada (Central)
-cn-north-1     = 'Beijing'             # 'cn-north-1' 'CNN01'     # China (Beijing)
-cn-northwest-1 = 'Ningxia'             # 'cn-northwest-1' 'CNNW1' # China (Ningxia)
-eu-central-1   = 'Frankfurt'           # 'eu-central-1' 'EUC01'   # Europe (Frankfurt)
-eu-west-1      = 'Ireland'             # 'eu-west-1' 'EUW01'      # Europe (Ireland)
-eu-west-2      = 'London'              # 'eu-west-2' 'EUW02'      # Europe (London)
-eu-south-1     = 'Milan'               # 'eu-south-1' 'EUS01'     # Europe (Milan)
-eu-west-3      = 'Paris'               # 'eu-west-3' 'EUW03'      # Europe (Paris)
-eu-south-2     = 'Spain'               # 'eu-south-2' 'EUS02'     # Europe (Spain)
-eu-north-1     = 'Stockholm'           # 'eu-north-1' 'EUN01'     # Europe (Stockholm)
-eu-central-2   = 'Zurich'              # 'eu-central-2' 'EUC02'   # Europe (Zurich)
-me-south-1     = 'Bahrain'             # 'me-south-1' 'MES01'     # Middle East (Bahrain)
-me-central-1   = 'UAE'                 # 'me-central-1' 'MEC01'   # Middle East (UAE)
-sa-east-1      = 'São Paulo'           # 'sa-east-1' 'SAE01'      # South America (São Paulo)
+format = '[$symbol]($style)'
 
 # Custom Color Palette (Based on Catpuccin Mocha)
 [palettes.patppuccin]
