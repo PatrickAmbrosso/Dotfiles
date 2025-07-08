@@ -1,37 +1,31 @@
 # Starship Prompt Configuration
+# By Patrick Ambrose 
 
-# Schema Reference
+# Schema Reference /////////////////////////////////////////////////////////////
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# Palette Configuration
+# Prompt Configurations ////////////////////////////////////////////////////////
 palette = "patppuccin"
-
-# Add newline configuration
+follow_symlinks = false
 add_newline = true
-
-# Continuation prompt configuration
 continuation_prompt = '[… ](bold mauve)'
 
-# Prompt Configurations
-
-# Left Prompt
 format = """\
 $username \
-[with](overlay2) $os$hostname \
-[at](overlay2) $directory\
-( [on](overlay2) $git_branch)\
+[on](overlay2) $os$hostname \
+[at](overlay2) $directory \
+([on](overlay2) $git_branch )\
+[via](overlay2) $shell \
 [$fill]() \
+$jobs \
 $cmd_duration\
-([using](overlay2) $nodejs$bun$python${custom.py_env}$golang$elixir$rust)\
-[in](overlay2) $shell\
 $line_break\
 $character\
 """
 
-# Right Prompt
 right_format = """"""
 
-# Prompt Segments
+# Modules Customizations ///////////////////////////////////////////////////////
 
 [username]
 style_user = "bold mauve"
@@ -60,7 +54,7 @@ ssh_only = false
 ssh_symbol = '(SSH)'
 style = "bold pink"
 format = '[$hostname$ssh_symbol]($style)'
-trim_at = '.home.patrickambrose.com'
+trim_at = '.'
 disabled = false
 
 [env_var.STARSHIP_DISTRO]
@@ -77,48 +71,34 @@ zsh_indicator = 'zsh'
 powershell_indicator = 'pwsh'
 nu_indicator = 'nush'
 unknown_indicator = 'sh..'
-style = 'bold yellow'
+style = 'bold blue'
 disabled = false
 
 [directory]
 truncation_length = 1
 truncation_symbol = " "
 style = "bold green"
-home_symbol = " home" 
+home_symbol = " home"
 format = "[$path]($style)"
 
 [character]
 success_symbol = "[❯](mauve)"
 error_symbol = "[❯](red)"
 
-[status]
-style = ''
-symbol = '[󰅙 ](fg:#f9e2af)'
-success_symbol = '[ ](fg:#a6e3a1)'
-not_executable_symbol = '[ ](fg:#f9e2af)'
-not_found_symbol = '[ ](fg:#f9e2af)'
-sigint_symbol = '[󰅙 ](fg:#89dceb)'
-signal_symbol = '[ ](fg:#89b4fa)'
-format = '[$symbol]($style)'
-map_symbol = true
-disabled = false
-
 [fill]
 symbol = ' '
 style = 'bold overlay2'
 
 [cmd_duration]
-min_time = 5000
-format = '([took ](overlay2)[$duration ](bold red))'
+min_time = 5000                                     #5000
+format = '([took ](overlay2)[$duration](bold red))'
 
 [time]
-disabled = false
+disabled = true
 style = "bold green"
 format = '[󱑎 $time]($style)'
 time_format = '%R'
 utc_time_offset = '+5.5'
-
-# Prompt configuratiuons for git and git-related tools
 
 [git_branch]
 symbol = ""
@@ -127,35 +107,12 @@ truncation_length = 10
 truncation_symbol = "…/"
 style = "bold peach"
 
-[git_status]
-format = '( [\[$all_status\]]($style))'
-style = "bold peach"
-conflicted = "="
-ahead = "⇡"
-behind = "⇣"
-diverged = "⇄"
-up_to_date = "✔"
-untracked = "?"
-stashed = "$"
-modified = "!"
-staged = "+"
-renamed = "»"
-deleted = "✘"
-
-
-# Prompt configuration for programming languages
+# Programming Language Configuration (Not Used) ////////////////////////////////
 
 [python]
 symbol = " "
 style = "bold blue"
 format = '[$symbol]($style)'
-
-[custom.py_env]
-detect_files = [ 'pyproject.toml' , 'poetry.lock' ]
-detect_folders = [ '.venv' , 'venv' ]
-style = "bold blue"
-format = '[\[$symbol\] ]($style)'
-symbol = "󱐋"
 
 [golang]
 symbol = " "
@@ -177,7 +134,8 @@ symbol = " "
 style = "bold peach"
 format = '[$symbol]($style)'
 
-# Custom Color Palette (Based on Catpuccin Mocha)
+# Custom Catppuccin Mocha Palette //////////////////////////////////////////////
+
 [palettes.patppuccin]
 rosewater = "#f5e0dc"
 flamingo = "#f2cdcd"
