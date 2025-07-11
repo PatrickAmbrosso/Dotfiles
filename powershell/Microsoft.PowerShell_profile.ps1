@@ -102,6 +102,25 @@ else {
 
 }
 
+# EDITOR SETUP ======================================
+$global:EDITOR = $global:EDITOR ?? (Get-Command code, hx, nvim, vim, vi, notepad++, sublime_text, notepad -ErrorAction SilentlyContinue | Select-Object -First 1).Name
+
+function edit {
+    param (
+        [Parameter(Position = 0)]
+        [string]$Path = "."  # Default to current directory
+    )
+
+    try {
+        $Resolved = Resolve-Path -Path $Path -ErrorAction Stop
+        & $global:EDITOR $Resolved
+    }
+    catch {
+        Write-Host "Could not resolve '$($Path)'. Opening default editor in current directory." -ForegroundColor Yellow
+        & $global:EDITOR .
+    }
+}
+
 # UTILITY FUNCTIONS =================================
 
 function mkcd { 
@@ -110,14 +129,20 @@ function mkcd {
     mkdir $dir -Force; Set-Location $dir 
 }
 
-function touch($file) { 
-    "" | Out-File $file -Encoding ASCII 
-}
-function ff($name) {
-    Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
-        Write-Output "$($_.FullName)"
+function touch {
+    param (
+        [Parameter(Position = 0, Mandatory = $true)]
+        [string]$Path
+    )
+    if (Test-Path $Path) {
+        Write-Host "File already exists at $Path" -ForegroundColor DarkGray
+    }
+    else {
+        "" | Out-File -FilePath $Path -Encoding UTF8
+        Write-Host "File newly created at $Path" -ForegroundColor White
     }
 }
+
 
 function locate {
     param (
@@ -141,37 +166,167 @@ function locate {
     }
 }
 
-function Test-CommandExists {
+function unzip {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, Mandatory = $true)]
+        [string[]]$Pattern,  # Accepts multiple patterns or files
 
-    param(
-        [string]$Command,
-
-        [switch]$Help
+        [string]$Destination = $PWD
     )
 
-    # Show help message if -Help is provided
-    if ($Help) {
-        @"
-Usage: Test-CommandExists [-Help] <command>
-Check if a command exists in the system's PATH.
+    $archives = @()
 
-Options:
-    -Help            : Prints this help message.
-    -Command         : Specify the command to check.
+    foreach ($p in $Pattern) {
+        $resolved = Resolve-Path -Path $p -ErrorAction SilentlyContinue
 
-Notes:
-    - If the command is not found, the function returns $false.
-    - The function returns $true if the command is found.
-"@
+        if ($resolved) {
+            foreach ($r in $resolved) {
+                if (Test-Path $r.Path -PathType Leaf) {
+                    $archives += Get-Item -Path $r.Path
+                }
+            }
+        }
+        else {
+            $basePath = Split-Path -Path $p -Parent
+            $fileName = Split-Path -Path $p -Leaf
+            if (-not $basePath) { $basePath = $PWD }
+
+            if (-not (Test-Path $basePath)) {
+                Write-Host "Path does not exist: $basePath" -ForegroundColor Red
+                continue
+            }
+
+            $MatchingEntries = Get-ChildItem -Path $basePath -Filter $fileName -File -ErrorAction SilentlyContinue
+            $archives += $MatchingEntries
+        }
+    }
+
+    if (-not $archives -or $archives.Count -eq 0) {
+        Write-Host "No matching archives found." -ForegroundColor Red
         return
     }
 
-    # Check if the command exists
-    return $null -ne (Get-Command $Command -ErrorAction SilentlyContinue)
+    if (-not (Test-Path $Destination)) {
+        try {
+            New-Item -Path $Destination -ItemType Directory -Force | Out-Null
+            Write-Host "Destination directory created: $Destination" -ForegroundColor Gray
+        }
+        catch {
+            Write-Host "Failed to create destination directory: $Destination" -ForegroundColor Red
+            Write-Host " → $($_.Exception.Message)" -ForegroundColor DarkGray
+            return
+        }
+    }
+
+    foreach ($archive in $archives | Sort-Object FullName -Unique) {
+        try {
+            Expand-Archive -Path $archive.FullName -DestinationPath $Destination -Force -ErrorAction Stop
+            Write-Host "Extracted: $($archive.Name)" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed: $($archive.Name)" -ForegroundColor Yellow
+            Write-Host " → $($_.Exception.Message)" -ForegroundColor DarkGray
+        }
+    }
 }
 
-# Aliases for Test-CommandExists
-function tc { Test-CommandExists @args }
+function Invoke-YTDownloader {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Url,
+
+        [ValidateSet("Raw", "VideoMP4", "VideoMKV", "AudioMP3", "AudioOpus", "AudioWAV")]
+        [string]$Format = "Raw",
+
+        [string]$OutputDir,
+
+        [switch]$AllowPlaylist,
+
+        [switch]$GetSubtitles
+    )
+
+    # Ensure yt-dlp exists
+    if (-not (Get-Command yt-dlp -ErrorAction SilentlyContinue)) {
+        Write-Host "yt-dlp is not installed or not found in PATH." -ForegroundColor Red
+        return
+    }
+
+    # Output directory
+    if (-not $OutputDir) {
+        $Shell = New-Object -ComObject Shell.Application
+        $DownloadsDir = $Shell.NameSpace('shell:Downloads').Self.Path
+        $OutputDir = "$DownloadsDir\YTDownloads"
+    }
+
+    # Ensure output directory exists
+    if (-not (Test-Path $OutputDir)) {
+        try {
+            New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
+        }
+        catch {
+            Write-Host "Failed to create output directory: $OutputDir" -ForegroundColor Red
+            return
+        }
+    }
+
+    # Confirm if playlist and not explicitly allowed
+    if ($Url -match "list=" -and -not $AllowPlaylist) {
+        $resp = Read-Host "This looks like a playlist. Download all items? [y/N]"
+        if ($resp -notin @("y", "Y", "yes", "Yes")) {
+            Write-Host "Aborted: Playlist not downloaded." -ForegroundColor Yellow
+            return
+        }
+    }
+
+
+    $Arguments = @(
+        "--quiet"
+        "--no-warnings"
+        "--embed-metadata"
+        "--output", "$OutputDir/%(title)s.%(ext)s"
+        "--no-overwrites"
+        "--progress"
+    )
+
+    # Subtitles
+    if ($GetSubtitles) {
+        $Arguments += "--write-subs"
+        $Arguments += "--write-auto-subs"
+        $Arguments += "--sub-lang"
+        $Arguments += "en"
+    }
+
+    # Format switch with yt-dlp presets or custom
+    switch ($Format) {
+        "VideoMP4" { $Arguments += "-t"; $Arguments += "mp4"; $Arguments += "--embed-thumbnail" }
+        "VideoMKV" { $Arguments += "-t"; $Arguments += "mkv"; $Arguments += "--embed-thumbnail" }
+        "AudioMP3" { $Arguments += "-t"; $Arguments += "mp3"; $Arguments += "--embed-thumbnail" }
+
+        "AudioOpus" {
+            $Arguments += "--format"; $Arguments += "bestaudio"
+            $Arguments += "--extract-audio"
+            $Arguments += "--audio-format"; $Arguments += "opus"
+        }
+
+        "AudioWAV" {
+            $Arguments += "--format"; $Arguments += "bestaudio"
+            $Arguments += "--extract-audio"
+            $Arguments += "--audio-format"; $Arguments += "wav"
+        }
+
+        "Raw" {
+            $Arguments += "--format"; $Arguments += "bv+ba/b"
+        }
+    }
+
+    # Run yt-dlp with arguments
+    Write-Host "Downloading content to $OutputDir" -ForegroundColor DarkGray
+    & yt-dlp @Arguments $Url
+}
+
+
 
 function Yank {
 
@@ -270,10 +425,10 @@ function Search {
     # Show help message if -Help is provided
     if ($Help) {
         @"
-Usage: Search [-Google] [-DuckDuckGo] [-Brave] [-Scoop] [-YouTube] [-GitHub] [-StackOverflow] [-Amazon] [-Winget] [-ChatGPT] [-LinkedIn] [-X] <query>
+Usage: Search [Provider] <query>
 Search the web using a specified search engine.
 
-Categories:
+Search Providers:
   General Search Engines:
     -Google        : Search using Google.
     -DuckDuckGo    : Search using DuckDuckGo (default).
@@ -303,7 +458,8 @@ Categories:
 Notes:
     - If no search engine is specified, DuckDuckGo is used by default.
     - Any text after the search engine flag is used as the search query.
-    - If more than one search engine is specified, the first valid engine is used.
+    - If more than one search provider is specified, the first valid provider is used.
+    - Default search engine can be set with the `$env:DEFAULT_SEARCH_ENGINE environment variable.
 "@
         return
     }
@@ -330,22 +486,26 @@ Notes:
     $ValidKeys = @($PSBoundParameters.Keys | Where-Object { $Engines.ContainsKey($_.ToLower()) })
 
     # Determine the selected engine
-    $SelectedEngine = if ($ValidKeys -and $ValidKeys.Count -gt 0) {
-        ($ValidKeys[0] -as [string]).ToLower()  # Ensure it's a string before using ToLower
+    $SelectedEngine = if ($ValidKeys.Count -gt 0) {
+        ($ValidKeys[0] -as [string]).ToLower()
+    }
+    elseif ($env:DEFAULT_SEARCH_ENGINE -and $Engines.ContainsKey($env:DEFAULT_SEARCH_ENGINE)) {
+        $env:DEFAULT_SEARCH_ENGINE
     }
     else {
-        "duckduckgo"  # Default to DuckDuckGo
+        "duckduckgo"
     }
 
-    # Validate the selected engine
+    # Validate the selected engine, exit if invalid
     if (-not $Engines.ContainsKey($SelectedEngine)) {
         Write-Error "Unsupported search engine: '$SelectedEngine'. Supported engines are: $($Engines.Keys -join ', ')"
         return
     }
 
-    # Ensure a query is provided
+    # Ensure a query is provided, else warn & exit
     if (-not $Query -or $Query.Count -eq 0) {
-        $Query = ""
+        Write-Host "No search query provided, please enter something to search for." -ForegroundColor Yellow
+        return
     }
 
     # Build and launch the search URL
@@ -356,83 +516,63 @@ Notes:
 
 # Aliases for search operations
 function s { Search @args }
-function sddg { Search -DuckDuckGo @args }
-function sscp { Search -Scoop @args }
-function syt { Search -YouTube @args }
-
-# EDITOR CONFIGURATION =================================
-
-# Select the editor as per a preference matrix
-$EDITOR = if (Test-CommandExists nvim) { 'code' }
-elseif (Test-CommandExists hx) { 'hx' }
-elseif (Test-CommandExists nvim) { 'nvim' }
-elseif (Test-CommandExists vim) { 'vim' }
-elseif (Test-CommandExists vi) { 'vi' }
-elseif (Test-CommandExists notepad++) { 'notepad++' }
-elseif (Test-CommandExists sublime_text) { 'sublime_text' }
-else { 'notepad' }
-
-# Setup Editor selection functionality for the preferred editor
-function edit {
-    param (
-        [Parameter(Position = 0)]
-        [string]$Path = "."  # Default to current directory
-    )
-
-    try {
-        $ResolvedPath = Resolve-Path -Path $Path -ErrorAction Stop
-        & $EDITOR $ResolvedPath
-    }
-    catch {
-        & $EDITOR .
-    }
-}
 
 # SETUP CLI TOOLS =================================
 
-# Setup Zoxide
-if (Test-CommandExists zoxide) {
-    # Activate Zoxide
-    Invoke-Expression (& { (zoxide init --cmd cd powershell | Out-String) })
-}
-else {
-    $StartupLogs += "Unable to find zoxide (https://github.com/ajeetdsouza/zoxide)"
-}
-
 # Setup bat (alternative to cat)
-if (Test-CommandExists bat) {
+if (Get-Command bat -ErrorAction SilentlyContinue) {
     $ENV:BAT_CONFIG_PATH = "$ENV:USERPROFILE/.config/bat/bat.conf"
     $ENV:BAT_CONFIG_DIR = "$ENV:USERPROFILE/.config/bat"
     Set-Alias -Name cat -Value bat
 }
 else {
-    $StartupLogs += "Unable to find bat (https://github.com/sharkdp/bat)"
+    Set-Alias -Name cat -Value Get-Content
+    $StartupLogs += "Unable to find bat (https://github.com/sharkdp/bat) [using Get-Content]"
 }
 
 # Setup eza (alternative to ls/Get-ChildItem)
-if (Test-CommandExists eza) {
+if (Get-Command eza -ErrorAction SilentlyContinue) {
     # Set the config directory
-    $ENV:EZA_CONFIG_DIR = "$env:USERPROFILE\.config\eza"
+    $env:EZA_CONFIG_DIR = "$env:USERPROFILE\.config\eza"
     # Remove the default ls alias
-    Remove-Alias -Name ls
+    Remove-Alias -Name ls -ErrorAction SilentlyContinue
     # Define command aliases for file & directory listings
-    function ls { eza -la --group-directories-first --icons @args }
-    function ld { eza -lh --group-directories-first --icons @args }
-    # Define command aliases for tree printing operations
-    function tree { eza -t --group-directories-first --icons  @args }
-    function tree1 { eza --tree --group-directories-first --icons --level 1 @args }
-    function tree2 { eza --tree --group-directories-first --icons --level 2 @args }
-    function tree3 { eza --tree --group-directories-first --icons --level 3 @args }
-    function tree4 { eza --tree --group-directories-first --icons --level 4 @args }
-    function tree5 { eza --tree --group-directories-first --icons --level 5 @args }
+    function ls { eza --no-permissions --long --all --no-quotes --group-directories-first --icons --time-style '+%h %d %H:%M' @args }
+    function lt { eza --no-permissions --long --all --no-quotes --group-directories-first --icons --time-style '+%h %d %H:%M' --tree @args }
 }
 else {
     $StartupLogs += "Unable to find eza locally installed (https://github.com/eza-community/eza)"
 }
 
+# Setup fd (alternative to find)
+if (Get-Command fd -ErrorAction SilentlyContinue) {
+    $env:LS_COLORS = @(
+        "di=34",          # Directory → Blue (standard fg: blue)
+        "ln=36",          # Symlink → Cyan (standard fg: cyan)
+        "so=35",          # Socket → Magenta (light use)
+        "pi=33",          # Named pipe → Yellow (neutral)
+        "ex=32",          # Executable → Green (safe/action-oriented)
+        "bd=1;33",        # Block device → Bold yellow (device = caution)
+        "cd=1;33",        # Char device → Same as above
+        "su=30;41",       # setuid → Black on red (security-sensitive)
+        "sg=30;43",       # setgid → Black on yellow (slightly less critical)
+        "tw=30;42",       # sticky + other-writable → Black on green (writable)
+        "ow=34;42",       # other-writable → Blue on green
+        "st=37;44",       # sticky → White on blue
+        "mi=05;37;41",    # missing → Dim white on red bg (broken link)
+        "or=05;31;40",    # orphan → Dim red on black
+        "no=0"            # default → Reset/normal
+    ) -join ":"
+
+    function ff { fd @args }
+}
+else {
+    $StartupLogs += "Unable to find fd (https://github.com/sharkdp/fd)"
+}
+
 
 # Invoke FastFetch
-if (Test-CommandExists fastfetch) {
+if (Get-Command fastfetch -ErrorAction SilentlyContinue) {
     # Display FastFetch Output on Screen
     & fastfetch.exe
 }
@@ -442,7 +582,7 @@ else {
 }
 
 # Invoke Starship
-if (Test-CommandExists starship) {
+if (Get-Command starship -ErrorAction SilentlyContinue) {
     # Set up Environment Variables for Starship
     $ENV:STARSHIP_CONFIG = "$ENV:USERPROFILE/.config/starship/starship.toml"
     # Triggers PowerShell to use Startship Prompt
@@ -453,7 +593,17 @@ else {
     $StartupLogs += "Unable to find starship (https://starship.rs/)"
 }
 
-# Report startup failures only if any
+# Setup Zoxide
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+    # Activate Zoxide
+    Invoke-Expression (& { (zoxide init --cmd cd powershell | Out-String) })
+}
+else {
+    $StartupLogs += "Unable to find zoxide (https://github.com/ajeetdsouza/zoxide)"
+}
+
+# RESPORTING & CLOSURE ===============================
+
 if ($StartupLogs.Count -gt 0) {
     Write-Host "`nStartup Failures:" -ForegroundColor Red
     $StartupLogs | ForEach-Object { Write-Host "`t- $($_)" }
