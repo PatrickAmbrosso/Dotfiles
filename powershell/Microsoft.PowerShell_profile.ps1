@@ -105,6 +105,14 @@ else {
 # EDITOR SETUP ======================================
 $global:EDITOR = $global:EDITOR ?? (Get-Command code, hx, nvim, vim, vi, notepad++, sublime_text, notepad -ErrorAction SilentlyContinue | Select-Object -First 1).Name
 
+# UTILITY FUNCTIONS =================================
+function export {
+    param(
+        [Parameter(Position = 0, Mandatory = $true)] [string]$name,
+        [Parameter(Position = 1, Mandatory = $true)] [string]$value
+    )
+    set-item -force -path "env:$name" -value $value
+}
 function edit {
     param (
         [Parameter(Position = 0)]
@@ -120,15 +128,65 @@ function edit {
         & $global:EDITOR .
     }
 }
-
-# UTILITY FUNCTIONS =================================
-
 function mkcd { 
     param($dir) 
     
-    mkdir $dir -Force; Set-Location $dir 
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null ; Set-Location $dir
 }
+function fcd {
+    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
+        Write-Host "fzf is not installed or not found in PATH. Needed for fcd." -ForegroundColor Red
+        return
+    }
 
+    $dir = Get-ChildItem -Directory -Recurse -EA SilentlyContinue | 
+    Select-Object -ExpandProperty FullName | 
+    fzf --height 40% --border=rounded --margin=1, 0 --reverse --prompt="Search Directories: " --ghost="Type to search for directories/folders"  --highlight-line --color=16
+    if ($dir) { Set-Location $dir }
+}
+function ff {
+    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
+        Write-Host "fzf is not installed or not found in PATH. Needed for ff." -ForegroundColor Red
+        return
+    }
+
+    $file = Get-ChildItem -Recurse -File -EA SilentlyContinue | 
+    Select-Object -ExpandProperty FullName | 
+    fzf --height 40% --border=rounded --margin=1, 0 --reverse --prompt="Search Files: " --ghost="Type to search for files"  --highlight-line --color=16
+    if ($file) {
+        if ($NoHyperLinks) {
+            Write-Host "Selected: $file"
+        }
+        else {
+            $esc = [char]27
+            $link = "${esc}]8;;file:///$file`a$file${esc}]8;;`a"
+            Write-Host "Selected: $link"
+        }
+    }
+}
+function fps {
+    if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
+        Write-Warning "fzf is not installed or not found in PATH."
+        return
+    }
+
+    $procs = Get-Process | Sort-Object ProcessName
+    $displayList = $procs | ForEach-Object {
+        "{0,-8}  {1}" -f $_.Id, $_.ProcessName
+    }
+
+    $selection = $displayList | fzf --height 40% --border=rounded --reverse --multi --prompt="Search Process: " --ghost="Type to search for processes" --highlight-line --color=16
+
+    if ($selection) {
+        # $selection is a single string with one or more lines
+        $ProcessIDs = $selection -split "`n" | ForEach-Object { ($_ -split '\s+')[0] }
+        foreach ($id in $ProcessIDs) {
+            $procObj = $procs | Where-Object { $_.Id -eq [int]$id }
+            if ($procObj) { $procObj }
+            else { Write-Warning "Process $id not found." }
+        }
+    }
+}
 function touch {
     param (
         [Parameter(Position = 0, Mandatory = $true)]
@@ -142,9 +200,7 @@ function touch {
         Write-Host "File newly created at $Path" -ForegroundColor White
     }
 }
-
-
-function locate {
+function which {
     param (
         [string]$CMD,
         [switch]$Yank
@@ -165,102 +221,145 @@ function locate {
         Write-Host "Unable to find $CMD" -ForegroundColor Red
     }
 }
-
-function unzip {
+function extract {
     [CmdletBinding()]
     param (
         [Parameter(Position = 0, Mandatory = $true)]
-        [string[]]$Pattern,  # Accepts multiple patterns or files
-
+        [string[]]$Pattern,
         [string]$Destination = $PWD
     )
 
-    $archives = @()
-
-    foreach ($p in $Pattern) {
-        $resolved = Resolve-Path -Path $p -ErrorAction SilentlyContinue
-
-        if ($resolved) {
-            foreach ($r in $resolved) {
-                if (Test-Path $r.Path -PathType Leaf) {
-                    $archives += Get-Item -Path $r.Path
-                }
-            }
-        }
-        else {
-            $basePath = Split-Path -Path $p -Parent
-            $fileName = Split-Path -Path $p -Leaf
-            if (-not $basePath) { $basePath = $PWD }
-
-            if (-not (Test-Path $basePath)) {
-                Write-Host "Path does not exist: $basePath" -ForegroundColor Red
-                continue
-            }
-
-            $MatchingEntries = Get-ChildItem -Path $basePath -Filter $fileName -File -ErrorAction SilentlyContinue
-            $archives += $MatchingEntries
+    function Get-Extractor($file) {
+        $lc = $file.ToLowerInvariant()
+        switch -regex ($lc) {
+            '\.(zip|tar|gz|tgz|bz2|tar\.gz|tar\.bz2|xz|tar\.xz)$' { "tar" }
+            '\.(7z|rar)$' { "7z" }
+            default { $null }
         }
     }
 
-    if (-not $archives -or $archives.Count -eq 0) {
+    function Assert-ToolAvailable($tool) {
+        switch ($tool) {
+            "tar" { Get-Command tar.exe -ErrorAction SilentlyContinue }
+            "7z" { Get-Command 7z.exe  -ErrorAction SilentlyContinue }
+            default { $false }
+        }
+    }
+
+    $archives = foreach ($p in $Pattern) {
+        Resolve-Path $p -ErrorAction SilentlyContinue | Get-Item
+    }
+
+    if (-not $archives) {
         Write-Host "No matching archives found." -ForegroundColor Red
         return
     }
 
     if (-not (Test-Path $Destination)) {
-        try {
-            New-Item -Path $Destination -ItemType Directory -Force | Out-Null
-            Write-Host "Destination directory created: $Destination" -ForegroundColor Gray
-        }
+        try { New-Item -Path $Destination -ItemType Directory -Force | Out-Null }
         catch {
-            Write-Host "Failed to create destination directory: $Destination" -ForegroundColor Red
-            Write-Host " → $($_.Exception.Message)" -ForegroundColor DarkGray
+            Write-Host "Failed to create directory: $Destination" -ForegroundColor Red
             return
         }
     }
 
-    foreach ($archive in $archives | Sort-Object FullName -Unique) {
+    foreach ($archive in $archives | Sort-Object -Unique FullName) {
+        $full = $archive.FullName
+        $tool = Get-Extractor $full
+        if (-not $tool) {
+            Write-Host "No extractor for: $($archive.Name)" -ForegroundColor Yellow
+            continue
+        }
+        if (-not (Assert-ToolAvailable $tool)) {
+            Write-Host "'$tool' not available for $($archive.Name)" -ForegroundColor Yellow
+            continue
+        }
         try {
-            Expand-Archive -Path $archive.FullName -DestinationPath $Destination -Force -ErrorAction Stop
+            switch ($tool) {
+                "tar" { & tar -xf $full -C $Destination }
+                "7z" { & 7z x $full "-o$Destination" -y | Out-Null }
+            }
             Write-Host "Extracted: $($archive.Name)" -ForegroundColor Green
         }
         catch {
             Write-Host "Failed: $($archive.Name)" -ForegroundColor Yellow
-            Write-Host " → $($_.Exception.Message)" -ForegroundColor DarkGray
         }
     }
 }
+function cleanup {
+    function Write-Status {
+        param (
+            [string]$Message
+        )
+        Write-Host "`r$Message" -ForegroundColor DarkGray -NoNewline
+        Start-Sleep -Milliseconds 300
+    }
 
-function Invoke-YTDownloader {
+    Write-Status "Clearing IE Cache"
+    Remove-Item -Path "$env:LOCALAPPDATA\Microsoft\Windows\INetCache\*" -Recurse -Force -EA SilentlyContinue
+
+    Write-Status "Clearing User Temp Files"    
+    Remove-Item -Path "$env:TEMP\*" -Recurse -Force -EA SilentlyContinue
+
+    Write-Status "Clearing Windows Temp Files"
+    Remove-Item -Path "$env:SystemRoot\Temp\*" -Recurse -Force -EA SilentlyContinue
+
+    Write-Host "`rCache & Temporary files have been cleared." -ForegroundColor Blue
+}
+function ytdl {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [string]$Url,
-
-        [ValidateSet("Raw", "VideoMP4", "VideoMKV", "AudioMP3", "AudioOpus", "AudioWAV")]
-        [string]$Format = "Raw",
-
+        [Parameter(Position = 0)][string]$Url,
+        [ValidateSet("Raw", "VideoMP4", "VideoMKV", "AudioMP3", "AudioOpus", "AudioWAV")][string]$Format = "Raw",
         [string]$OutputDir,
-
         [switch]$AllowPlaylist,
-
-        [switch]$GetSubtitles
+        [switch]$GetSubtitles,
+        [switch]$Help
     )
 
-    # Ensure yt-dlp exists
+    if ($Help) {
+        Write-Host @"
+Usage:
+    YTdl <Url> [options]
+
+Description:
+    Download YouTube videos or audio using yt-dlp.
+
+Arguments:
+    <Url>           YouTube video or playlist URL (required).
+
+Options:
+    -Format         Output format. Default: VideoMP4.
+    -OutputDir      Directory to save downloads.
+    -AllowPlaylist  Download all videos if URL is a playlist.
+    -GetSubtitles   Download English subtitles if available.
+    -Help           Show this help message.
+
+Notes:
+    - yt-dlp and ffmpeg must be installed and available in PATH.
+    - Available formats: VideoMP4, VideoMKV, AudioMP3, AudioOpus, AudioWAV.
+    - Playlists require confirmation unless -AllowPlaylist is specified.
+    - Subtitles (if requested) are English only.
+"@
+        return
+    }
+
+    if (-not $Url) {
+        Write-Host "Error: Url is required. Use -Help for usage details." -ForegroundColor Red
+        return
+    }
+
     if (-not (Get-Command yt-dlp -ErrorAction SilentlyContinue)) {
         Write-Host "yt-dlp is not installed or not found in PATH." -ForegroundColor Red
         return
     }
 
-    # Output directory
     if (-not $OutputDir) {
         $Shell = New-Object -ComObject Shell.Application
         $DownloadsDir = $Shell.NameSpace('shell:Downloads').Self.Path
         $OutputDir = "$DownloadsDir\YTDownloads"
     }
 
-    # Ensure output directory exists
     if (-not (Test-Path $OutputDir)) {
         try {
             New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
@@ -271,7 +370,6 @@ function Invoke-YTDownloader {
         }
     }
 
-    # Confirm if playlist and not explicitly allowed
     if ($Url -match "list=" -and -not $AllowPlaylist) {
         $resp = Read-Host "This looks like a playlist. Download all items? [y/N]"
         if ($resp -notin @("y", "Y", "yes", "Yes")) {
@@ -279,7 +377,6 @@ function Invoke-YTDownloader {
             return
         }
     }
-
 
     $Arguments = @(
         "--quiet"
@@ -290,7 +387,6 @@ function Invoke-YTDownloader {
         "--progress"
     )
 
-    # Subtitles
     if ($GetSubtitles) {
         $Arguments += "--write-subs"
         $Arguments += "--write-auto-subs"
@@ -298,105 +394,111 @@ function Invoke-YTDownloader {
         $Arguments += "en"
     }
 
-    # Format switch with yt-dlp presets or custom
     switch ($Format) {
         "VideoMP4" { $Arguments += "-t"; $Arguments += "mp4"; $Arguments += "--embed-thumbnail" }
         "VideoMKV" { $Arguments += "-t"; $Arguments += "mkv"; $Arguments += "--embed-thumbnail" }
         "AudioMP3" { $Arguments += "-t"; $Arguments += "mp3"; $Arguments += "--embed-thumbnail" }
-
         "AudioOpus" {
             $Arguments += "--format"; $Arguments += "bestaudio"
             $Arguments += "--extract-audio"
             $Arguments += "--audio-format"; $Arguments += "opus"
         }
-
         "AudioWAV" {
             $Arguments += "--format"; $Arguments += "bestaudio"
             $Arguments += "--extract-audio"
             $Arguments += "--audio-format"; $Arguments += "wav"
         }
-
         "Raw" {
             $Arguments += "--format"; $Arguments += "bv+ba/b"
         }
     }
 
-    # Run yt-dlp with arguments
     Write-Host "Downloading content to $OutputDir" -ForegroundColor DarkGray
     & yt-dlp @Arguments $Url
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -eq 0) {
+        Write-Host "Download completed successfully." -ForegroundColor Green
+    }
+    else {
+        Write-Host "Download failed with exit code $exitCode." -ForegroundColor Red
+    }
 }
-
-
-
-function Yank {
-
+function yank {
+    [CmdletBinding()]
     param (
         [Parameter(Position = 0)]
-        [string]$Path = (Get-Location), # Default to current directory if no path is specified
-
-        [switch]$Content, # Copy file content to clipboard
-        [switch]$PreviousCommand, # Copy the previous command to clipboard
-
-        [switch]$Help # Help message
+        [string]$Path = (Get-Location),
+    
+        [switch]$Content,
+        [switch]$Command,
+        [switch]$Help    
     )
 
-    # Show help message if -Help is provided
     if ($Help) {
-        @"
-Usage: yank [-Content] <path>
-Copy the current/specified path or previous shell command or file content to the clipboard.
+        Write-Host @"
+Usage:
+    Yank [-Content] <Path>
+    Yank -Command
+
+Description:
+    Copy path, previous command, or file content to clipboard.
+
+Arguments:
+    <Path>     File or directory path. Defaults to current directory.
 
 Options:
-    -Help            : Prints this help message.
-    -Path            : Specify a file or directory path (default: current directory).
-    -Content         : Copy the file content to the clipboard (only for files).
-    -PreviousCommand : Copy the previous command to the clipboard.
+    -Content   Copy the file contents to clipboard (files only).
+    -Command   Copy the previous shell command to clipboard.
+    -Help      Show this help message.
+
+Examples:
+    Yank
+    Yank -Content C:\example.txt
+    Yank -Command
 
 Notes:
-    - If -Content is specified, it copies the file content. Directories are not supported.
-    - Without any switches, the current or specified path is copied to the clipboard.
-    - If -PreviousCommand is specified, it copies the previous command to the clipboard.
-    - Previous command is powered by the History, hence it is across all existing PowerShell sessions.
+    - Without any switches, the current or specified path is copied.
+    - Option -Content copies the file content (dirs not supported).
+    - The option -Command uses shell history.
 "@
         return
     }
 
-    # Validate if the provided path exists
-    if (-not (Test-Path $Path)) {
-        Write-Error "Path '$Path' does not exist."
+    if ($Command) {
+        $prevCmd = (Get-History -Count 1 | Select-Object -ExpandProperty CommandLine)
+        if ($null -eq $prevCmd) {
+            Write-Host "No previous command found in history." -ForegroundColor Yellow
+        }
+        else {
+            Set-Clipboard -Value $prevCmd
+            Write-Host "Previous command copied to clipboard."
+        }
         return
     }
 
-    # Resolve full path
+    if (-not (Test-Path $Path)) {
+        Write-Host "Path '$Path' does not exist." -ForegroundColor Red
+        return
+    }
+
     $FullPath = Resolve-Path -Path $Path | Select-Object -ExpandProperty Path
 
-    # Handle -Content switch
     if ($Content) {
         if (Test-Path $Path -PathType Container) {
-            Write-Error "Cannot copy content of a directory. Path is a directory."
+            Write-Host "Cannot copy content of a directory. Path is a directory." -ForegroundColor Yellow
+            return
         }
-        else {
-            Set-Clipboard -Value (Get-Content -Path $FullPath -Raw)
-            Write-Host "File content copied to clipboard."
-        }
+        Set-Clipboard -Value (Get-Content -Path $FullPath -Raw)
+        Write-Host "File content copied to clipboard."
+        return
     }
-    elseif ($PreviousCommand) {
-        Set-Clipboard -Value (Get-History -Count 1 | Select-Object -ExpandProperty CommandLine)
-        Write-Host "Previous command copied to clipboard."
-    }
-    else {
-        # Default behavior: Copy the path
-        Set-Clipboard -Value $FullPath
-        Write-Host "Path copied to clipboard: $FullPath"
-    }
+
+    # Default: Copy path
+    Set-Clipboard -Value $FullPath
+    Write-Host "Path copied to clipboard: $FullPath"
 }
-
-# Aliases for Yank operations
-function y { Yank @args }
-function yc { Yank -Content @args }
-function yp { Yank -PreviousCommand @args }
-
-function Search {
+function search {
 
     param (
         [switch]$Help, # Show help message
@@ -513,11 +615,85 @@ Notes:
     $SearchURL = $Engines[$SelectedEngine] + [uri]::EscapeDataString($SearchQuery)
     Start-Process $SearchURL
 }
+function grab {
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Source,
+        [string]$OutputDir,
+        [int]$Connections = 8
+    )
 
-# Aliases for search operations
-function s { Search @args }
+    # Check for aria2c
+    $aria = Get-Command "aria2c" -ErrorAction SilentlyContinue
+    if (-not $aria) {
+        Write-Host "aria2c is not installed or not found in PATH!" -ForegroundColor Red
+        return
+    }
 
-# SETUP CLI TOOLS =================================
+    # Detect source type
+    $isTorrent = ($Source -like "*.torrent") -or (Test-Path $Source -PathType Leaf -and ($Source -match "\.torrent$"))
+    $isMagnet = $Source -like "magnet:*"
+    $isHttp = $Source -match '^https?://'
+
+    if (-not ($isTorrent -or $isMagnet -or $isHttp)) {
+        Write-Host "Unsupported source: $Source" -ForegroundColor Red
+        return
+    }
+
+    # Decide on OutputDir
+    if (-not $OutputDir) {
+        $Shell = New-Object -ComObject Shell.Application
+        $downloads = $Shell.NameSpace('shell:Downloads').Self.Path
+
+        if ($isHttp -or $isTorrent) {
+            $name = [System.IO.Path]::GetFileNameWithoutExtension($Source)
+        }
+        elseif ($isMagnet) {
+            # Use first 8 of hash as folder
+            if ($Source -match "btih:([a-fA-F0-9]+)") {
+                $name = "magnet-" + $matches[1].Substring(0, 8)
+            }
+            else {
+                $name = "magnet-download"
+            }
+        }
+        $OutputDir = Join-Path $downloads $name
+    }
+
+    # Ensure OutputDir exists
+    if (-not (Test-Path $OutputDir -PathType Container)) {
+        try {
+            New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
+        }
+        catch {
+            Write-Host "Failed to create output directory: $OutputDir" -ForegroundColor Red
+            return
+        }
+    }
+
+    # Compose aria2c arguments
+    $ariaArgs = @(
+        "-x $Connections"
+        "-s $Connections"
+        "-d `"$OutputDir`""
+        "--console-log-level=warn"
+        "--summary-interval=0"
+        "`"$Source`""
+    )
+
+    if ($isTorrent -or $isMagnet) {     
+        $ariaArgs += "--seed-time=0"
+    }
+
+    Write-Host "`nDownloading to $OutputDir" -ForegroundColor Blue
+    $cmd = "aria2c $($ariaArgs -join ' ')"
+    Invoke-Expression $cmd
+}
+function .. { Set-Location .. }
+function ... { Set-Location ..\.. }
+
+
+# SETUP CLI TOOLS ================================
 
 # Setup bat (alternative to cat)
 if (Get-Command bat -ErrorAction SilentlyContinue) {
@@ -528,6 +704,11 @@ if (Get-Command bat -ErrorAction SilentlyContinue) {
 else {
     Set-Alias -Name cat -Value Get-Content
     $StartupLogs += "Unable to find bat (https://github.com/sharkdp/bat) [using Get-Content]"
+}
+
+# Check fzf exists
+if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) {
+    $StartupLogs += "Unable to find fzf (needed for fuzzy ops) (https://github.com/junegunn/fzf)"
 }
 
 # Setup eza (alternative to ls/Get-ChildItem)
@@ -544,43 +725,6 @@ else {
     $StartupLogs += "Unable to find eza locally installed (https://github.com/eza-community/eza)"
 }
 
-# Setup fd (alternative to find)
-if (Get-Command fd -ErrorAction SilentlyContinue) {
-    $env:LS_COLORS = @(
-        "di=34",          # Directory → Blue (standard fg: blue)
-        "ln=36",          # Symlink → Cyan (standard fg: cyan)
-        "so=35",          # Socket → Magenta (light use)
-        "pi=33",          # Named pipe → Yellow (neutral)
-        "ex=32",          # Executable → Green (safe/action-oriented)
-        "bd=1;33",        # Block device → Bold yellow (device = caution)
-        "cd=1;33",        # Char device → Same as above
-        "su=30;41",       # setuid → Black on red (security-sensitive)
-        "sg=30;43",       # setgid → Black on yellow (slightly less critical)
-        "tw=30;42",       # sticky + other-writable → Black on green (writable)
-        "ow=34;42",       # other-writable → Blue on green
-        "st=37;44",       # sticky → White on blue
-        "mi=05;37;41",    # missing → Dim white on red bg (broken link)
-        "or=05;31;40",    # orphan → Dim red on black
-        "no=0"            # default → Reset/normal
-    ) -join ":"
-
-    function ff { fd @args }
-}
-else {
-    $StartupLogs += "Unable to find fd (https://github.com/sharkdp/fd)"
-}
-
-
-# Invoke FastFetch
-if (Get-Command fastfetch -ErrorAction SilentlyContinue) {
-    # Display FastFetch Output on Screen
-    & fastfetch.exe
-}
-else {
-    # Log the failure message
-    $StartupLogs += "Unable to find fastfetch (https://github.com/fastfetch-cli/fastfetch)"
-}
-
 # Invoke Starship
 if (Get-Command starship -ErrorAction SilentlyContinue) {
     # Set up Environment Variables for Starship
@@ -593,6 +737,16 @@ else {
     $StartupLogs += "Unable to find starship (https://starship.rs/)"
 }
 
+# Invoke FastFetch
+if (Get-Command fastfetch -ErrorAction SilentlyContinue) {
+    # Display FastFetch Output on Screen
+    & fastfetch.exe
+}
+else {
+    # Log the failure message
+    $StartupLogs += "Unable to find fastfetch (https://github.com/fastfetch-cli/fastfetch)"
+}
+
 # Setup Zoxide
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     # Activate Zoxide
@@ -602,9 +756,12 @@ else {
     $StartupLogs += "Unable to find zoxide (https://github.com/ajeetdsouza/zoxide)"
 }
 
-# RESPORTING & CLOSURE ===============================
+# RESPORTING & CLOSURE ===========================
 
 if ($StartupLogs.Count -gt 0) {
     Write-Host "`nStartup Failures:" -ForegroundColor Red
     $StartupLogs | ForEach-Object { Write-Host "`t- $($_)" }
 }
+
+# Set up ENV VARS ================================
+$env:UV_LINK_MODE = "copy" # uv option
